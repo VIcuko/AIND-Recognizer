@@ -104,6 +104,23 @@ class SelectorCV(ModelSelector):
 
     def select(self):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
+        split_method = KFold()
+        avg_scores = []
+        
+        try:
+            for n_component in self.n_components:
+                model = self.base_model(n_component)
+                fscores = []
+        
+                for _, test_idx in split_method.split(self.sequences):
+                    test_X, test_length = combine_sequences(test_idx, self.sequences)
+                    fscores.append(model.score(test_X, test_length))
 
-        # TODO implement model selection using CV
-        raise NotImplementedError
+                avg_scores.append(np.mean(fscores))
+
+        except Exception:
+            return self.base_model(self.n_constant)  
+
+        status = self.n_components[np.argmax(avg_scores)] if avg_scores else self.n_constant
+        
+        return self.base_model(status)
