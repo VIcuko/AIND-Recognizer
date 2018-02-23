@@ -27,6 +27,7 @@ class ModelSelector(object):
         self.max_n_components = max_n_components
         self.random_state = random_state
         self.verbose = verbose
+        self.n_components = range(self.min_n_components, self.max_n_components + 1)
 
     def select(self):
         raise NotImplementedError
