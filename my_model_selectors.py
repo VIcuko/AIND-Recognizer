@@ -91,7 +91,7 @@ class SelectorBIC(ModelSelector):
         except Exception:
             return self.base_model(self.n_constant)    
 
-        status = self.n_components[np.argmax(bic_scores)] if bic_scores else self.n_constant
+        status = self.n_components[np.argmin(bic_scores)] if bic_scores else self.n_constant
 
         return self.base_model(status)
 
@@ -149,6 +149,7 @@ class SelectorCV(ModelSelector):
         
                 for _, test_idx in split_method.split(self.sequences):
                     test_X, test_length = combine_sequences(test_idx, self.sequences)
+                    self.X, self.lengths = combine_sequences(train_idx, self.sequences)
                     fscores.append(model.score(test_X, test_length))
 
                 avg_scores.append(np.mean(fscores))
