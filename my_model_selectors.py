@@ -79,10 +79,12 @@ class SelectorBIC(ModelSelector):
         bic_scores = []
         try:
             for n in self.n_components:
+                
                 model = self.base_model(n)
-                log_l = model.score(self.X, self.lengths)
                 p = n ** 2 + 2 * n * model.n_features - 1
-                bic_score = -2 * log_l + p * np.log(n)
+                l = model.score(self.X, self.lengths)
+                
+                bic_score = -2 * l + p * np.log(n)
                 bic_scores.append(bic_score)
         
         except Exception:
@@ -105,9 +107,28 @@ class SelectorDIC(ModelSelector):
 
     def select(self):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
+        
+        dic_scores = []
+        logs_l = []
+        
+        try:
+            for n_component in self.n_components:
+                model = self.base_model(n_component)
+                logs_l.append(model.score(self.X, self.lengths))
+            
+            sum_logs_l = sum(logs_l)
+            m = len(self.n_components)
+            
+            for l in logs_l:
+                word_prob = (sum_logs_l - l) / (m - 1)
+                dic_scores.append(l - word_prob)
+        
+        except Exception:
+            return self.base_model(self.n_constant)
 
-        # TODO implement model selection based on DIC scores
-        raise NotImplementedError
+        status = self.n_components[np.argmax(dic_scores)] if dic_scores else self.n_constant
+        
+        return self.base_model(status)
 
 
 class SelectorCV(ModelSelector):
