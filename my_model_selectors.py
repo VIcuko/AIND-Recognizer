@@ -157,7 +157,7 @@ class SelectorCV(ModelSelector):
 
                 avg_scores.append(np.mean(fscores))
 
-        except ValueError:
+        except Exception:
             return self.base_model(self.n_constant)  
 
         status = self.n_components[np.argmax(avg_scores)] if avg_scores else self.n_constant
