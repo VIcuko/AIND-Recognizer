@@ -105,31 +105,34 @@ class SelectorDIC(ModelSelector):
     https://pdfs.semanticscholar.org/ed3d/7c4a5f607201f3848d4c02dd9ba17c791fc2.pdf
     DIC = log(P(X(i)) - 1/(M-1)SUM(log(P(X(all but i))
     '''
-
     def select(self):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-        
-        dic_scores = []
-        logs_l = []
-        
+    
         try:
-            for n_component in self.n_components:
-                model = self.base_model(n_component)
-                logs_l.append(model.score(self.X, self.lengths))
+            best_score = float("-Inf")
+            best_model = None
             
-            sum_logs_l = sum(logs_l)
-            m = len(self.n_components)
+            for n in range(self.min_n_components, self.max_n_components+1):
+                score, model = self.score(n)
             
-            for l in logs_l:
-                word_prob = (sum_logs_l - l) / (m - 1)
-                dic_scores.append(l - word_prob)
+                if score > best_score:
+                    best_score = score
+                    best_model = model
+            
+            return best_model   
         
         except Exception:
             return self.base_model(self.n_constant)
 
-        status = self.n_components[np.argmax(dic_scores)] if dic_scores else self.n_constant
+    def score(self, n):
+        model = self.base_model(n)
+        scores = []
+
+        for word, (X, lengths) in self.hwords.items():
+            if word != self.this_word:
+                scores.append(model.score(X, lengths))
         
-        return self.base_model(status)
+        return model.score(self.X, self.lengths) - np.mean(scores), model
 
 
 class SelectorCV(ModelSelector):
@@ -144,12 +147,12 @@ class SelectorCV(ModelSelector):
         
         try:
             for n_component in self.n_components:
-                model = self.base_model(n_component)
                 fscores = []
         
                 for _, test_idx in split_method.split(self.sequences):
-                    test_X, test_length = combine_sequences(test_idx, self.sequences)
                     self.X, self.lengths = combine_sequences(train_idx, self.sequences)
+                    model = self.base_model(n_component)
+                    test_X, test_length = combine_sequences(test_idx, self.sequences)
                     fscores.append(model.score(test_X, test_length))
 
                 avg_scores.append(np.mean(fscores))
