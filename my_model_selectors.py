@@ -149,7 +149,7 @@ class SelectorCV(ModelSelector):
             for n_component in self.n_components:
                 fscores = []
         
-                for _, test_idx in split_method.split(self.sequences):
+                for train_idx, test_idx in split_method.split(self.sequences):
                     self.X, self.lengths = combine_sequences(train_idx, self.sequences)
                     model = self.base_model(n_component)
                     test_X, test_length = combine_sequences(test_idx, self.sequences)
@@ -157,7 +157,7 @@ class SelectorCV(ModelSelector):
 
                 avg_scores.append(np.mean(fscores))
 
-        except Exception:
+        except ValueError:
             return self.base_model(self.n_constant)  
 
         status = self.n_components[np.argmax(avg_scores)] if avg_scores else self.n_constant
